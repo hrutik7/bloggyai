@@ -1,0 +1,173 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+.scraper-extension {
+  width: 1200px;
+  padding: 20px;
+  margin: 0 auto;
+}
+
+.scrape-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.scrape-button:hover {
+  background-color: #45a049;
+}
+
+.error-message {
+  color: red;
+  margin: 10px 0;
+}
+
+.table-container {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  position: sticky;
+  top: 0;
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tr:hover {
+  background-color: #f5f5f5;
+}
+
+.content-preview {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-preview img {
+  max-width: 50px;
+  max-height: 50px;
+  object-fit: cover;
+}
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.scraped-section {
+  margin-bottom: 40px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.scraped-section h2 {
+  margin: 0 0 15px 0;
+  color: #333;
+}
+
+.metadata {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+  color: #666;
+  font-size: 14px;
+}
+
+.content-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.content-cell {
+  border: 1px solid #ddd;
+  padding: 12px;
+  vertical-align: top;
+  width: 33.33%;
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 400px;
+}
+
+.content-cell:hover {
+  background-color: #f8f8f8;
+}
+
+/* Make the table responsive */
+@media (max-width: 1200px) {
+  .scraper-extension {
+    width: 95%;
+  }
+  
+  .content-cell {
+    font-size: 12px;
+    padding: 8px;
+  }
+}
