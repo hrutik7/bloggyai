@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import GeminiStreamChat from './GeminiStreamChat';
 import './App.css';
 
 interface ScrapedData {
@@ -16,23 +17,22 @@ interface ScrapedData {
 function App() {
   const [scrapedData, setScrapedData] = useState<ScrapedData[]>([]);
   const [error, setError] = useState<string>('');
-  const ITEMS_PER_ROW = 3;
 
   useEffect(() => {
     const messageListener = (message: any) => {
       if (message.type === 'SCRAPED_DATA') {
-        setScrapedData(prevData => [...prevData, message.data]);
+        setScrapedData([message.data]);
+        console.log("New data scraped, previous history cleared");
       }
     };
 
-    chrome.runtime.onMessage.addListener(messageListener);
+    chrome?.runtime?.onMessage?.addListener(messageListener);
     return () => {
-      chrome.runtime.onMessage.removeListener(messageListener);
+      chrome?.runtime?.onMessage?.removeListener(messageListener);
     };
   }, []);
 
   const handleScrapeClick = async () => {
-    console.log(scrapedData[0]?.paragraphs.join(),"LLLLLLLLLLLLLLLLLLLLLL")
     try {
       setError('');
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -53,29 +53,9 @@ function App() {
     }
   };
 
-  const renderContentGrid = (data: ScrapedData) => {
-    const allContent = [...data.paragraphs, ...data.lists];
-    const rows = Math.ceil(allContent.length / ITEMS_PER_ROW);
-    
-    return Array.from({ length: rows }).map((_, rowIndex) => (
-      <tr key={rowIndex}>
-        {Array.from({ length: ITEMS_PER_ROW }).map((_, colIndex) => {
-          const contentIndex = rowIndex * ITEMS_PER_ROW + colIndex;
-          const content = allContent[contentIndex];
-          
-          return (
-            <td key={colIndex} className="content-cell">
-              {content || ''}
-            </td>
-          );
-        })}
-      </tr>
-    ));
-  };
-
   return (
     <div className="scraper-extension">
-      <h1>Web Scraper</h1>
+      <h1>AI Web Scraper</h1>
       
       <button onClick={handleScrapeClick} className="scrape-button">
         Scrape This Page
@@ -87,23 +67,34 @@ function App() {
         </div>
       )}
 
-      <div className="table-container">
-        {scrapedData.map((data, index) => (
-          <div key={index} className="scraped-section">
-            <h2>{data.title}</h2>
-            <div className="metadata">
-              <span>Author: {data.author || 'N/A'}</span>
-              <span>Published: {data.publishDate ? new Date(data.publishDate).toLocaleDateString() : 'N/A'}</span>
-              <a href={data.url} target="_blank" rel="noopener noreferrer">View Source</a>
+      <div className="flex flex-col gap-10 p-4">
+        {/* <div className="scraped-content">
+          {scrapedData.map((data, index) => (
+            <div key={index} className="scraped-section">
+              <h2>{data.title}</h2>
+              <div className="metadata">
+                <span>Author: {data.author || 'N/A'}</span>
+                <span>Published: {data.publishDate ? new Date(data.publishDate).toLocaleDateString() : 'N/A'}</span>
+                <a href={data.url} target="_blank" rel="noopener noreferrer">View Source</a>
+              </div>
+              
+              <div className="content-preview">
+                <h3>Content Preview</h3>
+                <p>{data.paragraphs[0]}</p>
+              </div>
             </div>
-            
-            <table className="content-table">
-              <tbody>
-                {renderContentGrid(data)}
-              </tbody>
-            </table>
-          </div>
-        ))}
+          ))}
+        </div> */}
+
+        <div className="chat-section">
+          {scrapedData.length > 0 ? (
+            <GeminiStreamChat scrapedData={scrapedData} />
+          ) : (
+            <div className="no-data-message">
+              Scrape a page to start chatting about its content
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
