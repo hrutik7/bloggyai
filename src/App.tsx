@@ -54,11 +54,13 @@ function App() {
   };
 
   return (
-    <div className="scraper-extension">
-      <h1>AI Web Scraper</h1>
-      
-      <button onClick={handleScrapeClick} className="scrape-button">
-        Scrape This Page
+    <div className="scraper-extension w-[100%] text-center px-10">
+      <h1>GoroAI 🤖</h1>
+      <p className='py-3 font-bold text-gray-400'>
+      Your Curiosity Companion 🧠 - Explore & Learn with AI! ✨
+      </p>
+      <button onClick={handleScrapeClick} className="scrape-button bg-blue-500">
+        Start 
       </button>
 
       {error && (
@@ -91,7 +93,7 @@ function App() {
             <GeminiStreamChat scrapedData={scrapedData} />
           ) : (
             <div className="no-data-message">
-              Scrape a page to start chatting about its content
+              click on start 🏃‍➡️
             </div>
           )}
         </div>

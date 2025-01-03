@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "bloggyai",
+  "name": "GoroAI 🤖",
   "version": "1.0",
-  "description": "A web scraper extension",
+  "description": "Your Curiosity Companion 🧠 - Explore & Learn with AI! ✨",
   "permissions": [
     "activeTab",
     "scripting",
