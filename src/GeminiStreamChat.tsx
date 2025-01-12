@@ -4,9 +4,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface Props {
   scrapedData: any[];
+  apiKey: string;
 }
 
-const GeminiStreamChat: React.FC<Props> = ({ scrapedData }) => {
+const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
   const [messages, setMessages] = useState<string[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +19,7 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData }) => {
 
     try {
       setIsLoading(true);
-      const genAI = new GoogleGenerativeAI('AIzaSyDDwXcjyUFLYM-kAqv4A2JJEECLGRIr29g');
+      const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
       
       const context = scrapedData[0];

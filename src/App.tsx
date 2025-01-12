@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import GeminiStreamChat from './GeminiStreamChat';
+import Onboarding from './onboarding';
 import './App.css';
 
 interface ScrapedData {
@@ -14,9 +15,30 @@ interface ScrapedData {
   images: string[];
 }
 
+interface UserData {
+  username: string;
+  email: string;
+  password: string;
+  apiKey: string;
+}
+
 function App() {
   const [scrapedData, setScrapedData] = useState<ScrapedData[]>([]);
   const [error, setError] = useState<string>('');
+  const [userData, setUserData] = useState<UserData | null>(null);
+
+  useEffect(() => {
+    // Check for existing user data in storage
+    const storedUser = localStorage.getItem('userData');
+    if (storedUser) {
+      setUserData(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleOnboardingComplete = (data: UserData) => {
+    setUserData(data);
+    localStorage.setItem('userData', JSON.stringify(data));
+  };
 
   useEffect(() => {
     const messageListener = (message: any) => {
@@ -53,12 +75,23 @@ function App() {
     }
   };
 
+  if (!userData) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
+  }
+
   return (
     <div className="scraper-extension w-[100%] text-center px-10">
-      <h1>GoroAI 🤖</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1>GoroAI 🤖</h1>
+        <div className="text-sm text-gray-600">
+          Welcome, {userData.username} 👋
+        </div>
+      </div>
+      
       <p className='py-3 font-bold text-gray-400'>
-      Your Curiosity Companion 🧠 - Explore & Learn with AI! ✨
+        Your Curiosity Companion 🧠 - Explore & Learn with AI! ✨
       </p>
+
       <button onClick={handleScrapeClick} className="scrape-button bg-blue-500">
         Start 
       </button>
@@ -70,27 +103,9 @@ function App() {
       )}
 
       <div className="flex flex-col gap-10 p-4">
-        {/* <div className="scraped-content">
-          {scrapedData.map((data, index) => (
-            <div key={index} className="scraped-section">
-              <h2>{data.title}</h2>
-              <div className="metadata">
-                <span>Author: {data.author || 'N/A'}</span>
-                <span>Published: {data.publishDate ? new Date(data.publishDate).toLocaleDateString() : 'N/A'}</span>
-                <a href={data.url} target="_blank" rel="noopener noreferrer">View Source</a>
-              </div>
-              
-              <div className="content-preview">
-                <h3>Content Preview</h3>
-                <p>{data.paragraphs[0]}</p>
-              </div>
-            </div>
-          ))}
-        </div> */}
-
         <div className="chat-section">
           {scrapedData.length > 0 ? (
-            <GeminiStreamChat scrapedData={scrapedData} />
+            <GeminiStreamChat scrapedData={scrapedData} apiKey={userData.apiKey} />
           ) : (
             <div className="no-data-message">
               click on start 🏃‍➡️
