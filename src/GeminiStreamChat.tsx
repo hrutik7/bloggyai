@@ -107,9 +107,17 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
             .join('');
           console.log('Transcript:', transcript);
         };
-        recognition.onerror = (error) => {
-          console.error('Speech recognition error1:', error);
+        recognition.onerror = (event:any) => {
+          if (event.error === 'network') {
+            console.error('Network error: Check your internet connection or try deploying to a secure domain.');
+            alert('Speech recognition failed due to a network issue. Please check your internet connection.');
+          } else {
+            console.error('Speech recognition error:', event.error);
+            alert(`Speech recognition error: ${event.error}`);
+          }
+          setIsListening(false);
         };
+        
 
         recognition.start();
       };
@@ -130,8 +138,14 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
         setInputMessage(transcript);
       };
 
-      recognitionInstance.onerror = (event: Event) => {
-        console.error('Speech recognition error2:', event);
+      recognitionInstance.onerror = (event:any) => {
+        if (event.error === 'network') {
+          console.error('Network error: Check your internet connection or try deploying to a secure domain.');
+          alert('Speech recognition failed due to a network issue. Please check your internet connection.');
+        } else {
+          console.error('Speech recognition error:', event.error);
+          alert(`Speech recognition error: ${event.error}`);
+        }
         setIsListening(false);
       };
 
