@@ -1,21 +1,27 @@
 {
   "manifest_version": 3,
-  "name": "GoroAI 🤖",
+  "name": "QsenseAI 🤖",
   "version": "1.0",
   "description": "Your Curiosity Companion 🧠 - Explore & Learn with AI! ✨",
   "permissions": [
     "activeTab",
     "scripting",
     "tabs",
-     "audioCapture",
-    "storage"
+    "audioCapture",
+    "microphone",
+    "tts",
+    "storage",
+    "http://localhost/*",
+    "https://localhost/*",
+    "http://localhost/*",
+    "https://*/*"
   ],
   "action": {
     "default_popup": "index.html"
   },
   "web_accessible_resources": [{
     "resources": ["*"],
-    "matches": ["https://*/*"]
+    "matches": ["<all_urls>"]
   }],
   "host_permissions": [
     "http://localhost:*",
@@ -26,6 +32,6 @@
     "http://*/*"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; media-src 'self' https://*;"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; media-src 'self' blob:"
   }
 }

@@ -75,6 +75,74 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
 
   useEffect(() => {
+    console.log(window.location.hostname,"window.location.hostname",window.location.protocol,window.location.href)
+    const initializeSpeechRecognition = async () => {
+      try {
+        // Explicitly check microphone permission first
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+    
+        // For Chrome extensions, explicitly use webkitSpeechRecognition
+        const recognition = new window.webkitSpeechRecognition();
+        
+        // Configure for extension environment
+        recognition.continuous = false; // Start with false for testing
+        recognition.interimResults = false;
+        // recognition.maxAlternatives = 1;
+        recognition.lang = 'en-US';
+    
+        // Detailed event logging
+        recognition.onstart = () => {
+          console.log('Recognition started');
+          setIsListening(true);
+        };
+    
+        recognition.onaudiostart = () => {
+          console.log('Audio capturing started');
+        };
+    
+        recognition.onerror = (event: any) => {
+          console.error('Recognition error:', event.error);
+          
+          // Handle specific error cases
+          if (event.error === 'network') {
+            // Check if extension is still active
+            if (chrome.runtime && chrome.runtime.id) {
+              console.log('Extension is active, attempting restart...');
+              setTimeout(() => {
+                recognition.start();
+              }, 1000);
+            }
+          }
+          
+          setIsListening(false);
+        };
+    
+        recognition.onend = () => {
+          console.log('Recognition ended');
+          // If still supposed to be listening, restart
+          if (isListening) {
+            console.log('Restarting recognition...');
+            recognition.start();
+          }
+        };
+    
+        recognition.onresult = (event: SpeechRecognitionEvent) => {
+          const transcript = event.results[0][0].transcript;
+          console.log('Got result:', transcript);
+          setInputMessage(transcript);
+        };
+    
+        return recognition;
+      } catch (error) {
+        console.error('Failed to initialize speech recognition:', error);
+        throw error;
+      }
+    };
+
+    initializeSpeechRecognition()
+    
+    
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
       navigator.mediaDevices
         .getUserMedia({ audio: true })
@@ -156,19 +224,99 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
       setRecognition(recognitionInstance);
     }
   }, []);
-
-  const toggleListening = () => {
-    if (!recognition) {
-      alert('Speech recognition is not supported in your browser.');
-      return;
+  
+  const initializeSpeechRecognition = async () => {
+    try {
+      // Create recognition instance
+      const recognition = new window.webkitSpeechRecognition();
+      
+      // Configure for extension environment
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+  
+      // Check if we're in a secure context
+      if (!window.isSecureContext) {
+        throw new Error('Speech Recognition requires a secure context');
+      }
+  
+      // Request permission first
+      const permissionResult = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+      
+      if (permissionResult.state === 'denied') {
+        throw new Error('Microphone permission is required');
+      }
+  
+      // Setup event handlers
+      recognition.onstart = () => {
+        console.log('Recognition started');
+        setIsListening(true);
+      };
+  
+      recognition.onerror = (event: any) => {
+        console.error('Recognition error:', event.error);
+        if (event.error === 'network') {
+          // Check if extension is still active and in a valid state
+          if (chrome.runtime?.id && window.isSecureContext) {
+            console.log('Attempting to restart recognition...');
+            setTimeout(() => {
+              try {
+                recognition.stop();
+                recognition.start();
+              } catch (e) {
+                console.error('Failed to restart recognition:', e);
+              }
+            }, 1000);
+          }
+        } else if (event.error === 'not-allowed') {
+          alert('Please grant microphone permission in Chrome settings');
+        }
+        setIsListening(false);
+      };
+  
+      recognition.onend = () => {
+        console.log('Recognition ended');
+        setIsListening(false);
+      };
+  
+      return recognition;
+    } catch (error:any) {
+      console.error('Failed to initialize speech recognition:', error);
+      alert(`Speech recognition error: ${error?.message}`);
+      return null;
     }
-
-    if (isListening) {
-      recognition.stop();
+  };
+  
+  // Modified toggleListening function
+  const toggleListening = async () => {
+    try {
+      if (!recognition) {
+        const newRecognition = await initializeSpeechRecognition();
+        if (!newRecognition) {
+          return;
+        }
+        setRecognition(newRecognition);
+      }
+  
+      if (isListening) {
+        recognition?.stop();
+      } else {
+        // Verify permissions before starting
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: true,
+          video: false 
+        });
+        
+        // Stop the test stream
+        stream.getTracks().forEach(track => track.stop());
+        
+        // Start recognition
+        recognition?.start();
+      }
+    } catch (error) {
+      console.error('Error toggling speech recognition:', error);
+      alert('Failed to access microphone. Please check permissions.');
       setIsListening(false);
-    } else {
-      recognition.start();
-      setIsListening(true);
     }
   };
 

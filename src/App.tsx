@@ -57,24 +57,67 @@ function App() {
   const handleScrapeClick = async () => {
     try {
       setError('');
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      // First check if we already have the permission
+      // const hasPermission = await new Promise((resolve) => {
+      //   chrome.permissions.contains({
+      //     permissions: ['microphone']
+      //   }, (result) => {
+      //     resolve(result);
+      //   });
+      // });
+  
+      // if (!hasPermission) {
+      //   // Show user-friendly message before permission request
+      //   setError('You will be prompted for microphone access. If you don\'t see the prompt, check the Chrome menu (three dots) in your browser.');
+        
+      //   // Request permission
+      //   const granted = await new Promise((resolve) => {
+      //     chrome.permissions.request({
+      //       permissions: ['microphone']
+      //     }, (result) => {
+      //       resolve(result);
+      //     });
+      //   });
+  
+      //   if (!granted) {
+      //     throw new Error(
+      //       'Extension needs microphone access. To enable:\n' +
+      //       '1. Click the Chrome menu (three dots)\n' +
+      //       '2. Go to More Tools > Extensions\n' +
+      //       '3. Find this extension\n' +
+      //       '4. Click "Details"\n' +
+      //       '5. Scroll to "Permissions"\n' +
+      //       '6. Enable microphone access'
+      //     );
+      //   }
+      // }
+  
+      // Get the active tab
+      const [tab] = await chrome.tabs.query({ 
+        active: true, 
+        currentWindow: true 
+      });
       
       if (!tab?.id) {
         throw new Error('No active tab found');
       }
-
+  
+      // Execute content script
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         files: ['content.js']
       });
-
+  
+      // Send message to start scraping
       await chrome.tabs.sendMessage(tab.id, { type: 'START_SCRAPING' });
+  
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
       console.error('Scraping error:', err);
     }
   };
-
   if (!userData) {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }

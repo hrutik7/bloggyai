@@ -67,7 +67,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Welcome to GoroAI 🤖</h2>
+          <h2 className="text-3xl font-bold text-gray-900">Welcome to QsenseAI 🤖</h2>
           <p className="mt-2 text-gray-600">Your Curiosity Companion 🧠✨</p>
         </div>
 

@@ -1,9 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
-import basicSsl from '@vitejs/plugin-basic-ssl'
+// import basicSsl from '@vitejs/plugin-basic-ssl'
+import fs from 'fs';
+import mkcert from 'vite-plugin-mkcert'
 export default defineConfig({
-  plugins: [react(),basicSsl()],
+  plugins: [react(),mkcert()],
   build: {
     outDir: 'dist',
     rollupOptions: {
@@ -19,5 +21,16 @@ export default defineConfig({
         assetFileNames: '[name].[ext]'
       }
     }
-  }
+  },
+  server: {
+    https: {
+      key: fs.readFileSync('./localhost-key.pem'),
+      cert: fs.readFileSync('./localhost-cert.pem'),
+    },
+    cors: true,
+    headers: {
+      'Access-Control-Allow-Origin':
+        '*',
+    },
+  },
 })
