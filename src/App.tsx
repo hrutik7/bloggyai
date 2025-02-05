@@ -26,6 +26,7 @@ function App() {
   const [scrapedData, setScrapedData] = useState<ScrapedData[]>([]);
   const [error, setError] = useState<string>('');
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [micPermissionGranted, setMicPermissionGranted] = useState(false);
 
   useEffect(() => {
     // Check for existing user data in storage
@@ -54,45 +55,29 @@ function App() {
     };
   }, []);
 
+  const requestMicrophonePermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop()); // Stop the stream after getting permission
+      setMicPermissionGranted(true);
+      return true;
+    } catch (err) {
+      console.error('Microphone permission error:', err);
+      setError('Please allow microphone access to use voice input.');
+      return false;
+    }
+  };
+
   const handleScrapeClick = async () => {
     try {
       setError('');
       
-      // First check if we already have the permission
-      // const hasPermission = await new Promise((resolve) => {
-      //   chrome.permissions.contains({
-      //     permissions: ['microphone']
-      //   }, (result) => {
-      //     resolve(result);
-      //   });
-      // });
-  
-      // if (!hasPermission) {
-      //   // Show user-friendly message before permission request
-      //   setError('You will be prompted for microphone access. If you don\'t see the prompt, check the Chrome menu (three dots) in your browser.');
-        
-      //   // Request permission
-      //   const granted = await new Promise((resolve) => {
-      //     chrome.permissions.request({
-      //       permissions: ['microphone']
-      //     }, (result) => {
-      //       resolve(result);
-      //     });
-      //   });
-  
-      //   if (!granted) {
-      //     throw new Error(
-      //       'Extension needs microphone access. To enable:\n' +
-      //       '1. Click the Chrome menu (three dots)\n' +
-      //       '2. Go to More Tools > Extensions\n' +
-      //       '3. Find this extension\n' +
-      //       '4. Click "Details"\n' +
-      //       '5. Scroll to "Permissions"\n' +
-      //       '6. Enable microphone access'
-      //     );
-      //   }
-      // }
-  
+      // First request microphone permission
+      const permissionGranted = await requestMicrophonePermission();
+      if (!permissionGranted) {
+        throw new Error('Microphone permission is required for voice input');
+      }
+
       // Get the active tab
       const [tab] = await chrome.tabs.query({ 
         active: true, 
@@ -102,22 +87,23 @@ function App() {
       if (!tab?.id) {
         throw new Error('No active tab found');
       }
-  
+
       // Execute content script
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         files: ['content.js']
       });
-  
+
       // Send message to start scraping
       await chrome.tabs.sendMessage(tab.id, { type: 'START_SCRAPING' });
-  
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
       console.error('Scraping error:', err);
     }
   };
+
   if (!userData) {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
@@ -135,12 +121,15 @@ function App() {
         Your Curiosity Companion 🧠 - Explore & Learn with AI! ✨
       </p>
 
-      <button onClick={handleScrapeClick} className="scrape-button bg-blue-500">
-        Start 
+      <button 
+        onClick={handleScrapeClick} 
+        className={`scrape-button ${micPermissionGranted ? 'bg-green-500' : 'bg-blue-500'}`}
+      >
+        {micPermissionGranted ? 'Start with Voice 🎤' : 'Start'} 
       </button>
 
       {error && (
-        <div className="error-message">
+        <div className="error-message text-red-500 mt-2">
           {error}
         </div>
       )}
@@ -148,7 +137,11 @@ function App() {
       <div className="flex flex-col gap-10 p-4">
         <div className="chat-section">
           {scrapedData.length > 0 ? (
-            <GeminiStreamChat scrapedData={scrapedData} apiKey={userData.apiKey} />
+            <GeminiStreamChat 
+              scrapedData={scrapedData} 
+              apiKey={userData.apiKey}
+              micPermissionGranted={micPermissionGranted}
+            />
           ) : (
             <div className="no-data-message">
               click on start 🏃‍➡️

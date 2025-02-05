@@ -63,9 +63,10 @@ declare global {
 interface Props {
   scrapedData: any[];
   apiKey: string;
+  micPermissionGranted: boolean;
 }
 
-const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
+const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey, micPermissionGranted }) => {
   const [messages, setMessages] = useState<string[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -74,17 +75,49 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
 
+
+  useEffect(() => {
+    // Listen for messages from the background script
+    chrome.runtime.onMessage.addListener((message) => {
+      if (message.type === 'transcript') {
+        setInputMessage(message.data);
+      }
+    });
+  }, []);
+
+  const startListening = () => {
+    console.log("Starting recognition...");
+    const recognition = new window.webkitSpeechRecognition();
+    recognition.onstart = () => {
+      console.log('Recognition started');
+      setIsListening(true);  // Set to true when starting
+    };
+    
+    chrome.runtime.sendMessage({ type: 'start' });
+  };
+
+  const stopListening = () => {
+    console.log("Stopping recognition...");
+    if (recognition) {
+      recognition.stop();
+      setIsListening(false);
+    }
+    chrome.runtime.sendMessage({ type: 'stop' });
+  };
+
+
   useEffect(() => {
     console.log(window.location.hostname,"window.location.hostname",window.location.protocol,window.location.href)
     const initializeSpeechRecognition = async () => {
       try {
         // Explicitly check microphone permission first
+        
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         stream.getTracks().forEach(track => track.stop());
-    
+        console.log("above recognition")
         // For Chrome extensions, explicitly use webkitSpeechRecognition
         const recognition = new window.webkitSpeechRecognition();
-        
+        console.log("below recognition")
         // Configure for extension environment
         recognition.continuous = false; // Start with false for testing
         recognition.interimResults = false;
@@ -102,11 +135,12 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
         };
     
         recognition.onerror = (event: any) => {
-          console.error('Recognition error:', event.error);
           
+          console.log(event.error,"kodokaos")
           // Handle specific error cases
           if (event.error === 'network') {
             // Check if extension is still active
+            console.error('Recognition error:', event.error,chrome.runtime);
             if (chrome.runtime && chrome.runtime.id) {
               console.log('Extension is active, attempting restart...');
               setTimeout(() => {
@@ -177,7 +211,7 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
         };
         recognition.onerror = (event:any) => {
           if (event.error === 'network') {
-            console.error('Network error: Check your internet connection or try deploying to a secure domain.');
+            console.error('Network error2: Check your internet connection or try deploying to a secure domain.');
             alert('Speech recognition failed due to a network issue. Please check your internet connection.');
           } else {
             console.error('Speech recognition error:', event.error);
@@ -208,7 +242,7 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
 
       recognitionInstance.onerror = (event:any) => {
         if (event.error === 'network') {
-          console.error('Network error: Check your internet connection or try deploying to a secure domain.');
+          console.error('Network error1: Check your internet connection or try deploying to a secure domain.');
           alert('Speech recognition failed due to a network issue. Please check your internet connection.');
         } else {
           console.error('Speech recognition error:', event.error);
@@ -239,7 +273,7 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
       if (!window.isSecureContext) {
         throw new Error('Speech Recognition requires a secure context');
       }
-  
+      console.log("context is secure",micPermissionGranted)
       // Request permission first
       const permissionResult = await navigator.permissions.query({ name: 'microphone' as PermissionName });
       
@@ -289,6 +323,7 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
   
   // Modified toggleListening function
   const toggleListening = async () => {
+    
     try {
       if (!recognition) {
         const newRecognition = await initializeSpeechRecognition();
@@ -445,7 +480,13 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey }) => {
           <div className="flex space-x-2">
             <button
               type="button"
-              onClick={toggleListening}
+              onClick={() => {
+                if (isListening) {
+                  stopListening();
+                } else {
+                  startListening();
+                }
+              }}
               className={`p-2 rounded-full ${
                 isListening ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-600'
               }`}
