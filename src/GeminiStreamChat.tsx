@@ -63,254 +63,22 @@ declare global {
 interface Props {
   scrapedData: any[];
   apiKey: string;
+  micPermissionGranted: boolean;
 }
 
-const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey,micPermissionGranted }:any) => {
+const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey, micPermissionGranted }) => {
   const [messages, setMessages] = useState<string[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [askingPermission, setAskingPermission] = useState(false);
   const [pendingQuestion, setPendingQuestion] = useState('');
   const [isListening, setIsListening] = useState(false);
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+
+
+  console.log(micPermissionGranted)
 
   useEffect(() => {
-    console.log(window.location.hostname,"window.location.hostname",window.location.protocol,window.location.href,micPermissionGranted)
-    chrome.runtime.onMessage.addListener((message) => {
-      if (message.type === 'transcript') {
-        setInputMessage(message.data);
-      }
-    });
-   
-    const initializeSpeechRecognition = async () => {
-      try {
-        // Explicitly check microphone permission first
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
-    
-        // For Chrome extensions, explicitly use webkitSpeechRecognition
-        const recognition = new window.webkitSpeechRecognition();
-        
-        // Configure for extension environment
-        recognition.continuous = false; // Start with false for testing
-        recognition.interimResults = false;
-        // recognition.maxAlternatives = 1;
-        recognition.lang = 'en-US';
-    
-        // Detailed event logging
-        recognition.onstart = () => {
-          console.log('Recognition started');
-          setIsListening(true);
-        };
-    
-        recognition.onaudiostart = () => {
-          console.log('Audio capturing started');
-        };
-    
-        recognition.onerror = (event: any) => {
-          console.error('Recognition error:', event.error);
-          
-          // Handle specific error cases
-          if (event.error === 'network') {
-            // Check if extension is still active
-            if (chrome.runtime && chrome.runtime.id) {
-              console.log('Extension is active, attempting restart...');
-              setTimeout(() => {
-                recognition.start();
-              }, 1000);
-            }
-          }
-          
-          setIsListening(false);
-        };
-    
-        recognition.onend = () => {
-          console.log('Recognition ended');
-          // If still supposed to be listening, restart
-          if (isListening) {
-            console.log('Restarting recognition...');
-            recognition.start();
-          }
-        };
-    
-        recognition.onresult = (event: SpeechRecognitionEvent) => {
-          const transcript = event.results[0][0].transcript;
-          console.log('Got result:', transcript);
-          setInputMessage(transcript);
-        };
-    
-        return recognition;
-      } catch (error) {
-        console.error('Failed to initialize speech recognition:', error);
-        throw error;
-      }
-    };
-
-    initializeSpeechRecognition()
-    
-    
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then(() => {
-          console.log('Microphone permission granted');
-          startSpeechRecognition();
-        })
-        .catch((error) => {
-          console.error('Microphone permission denied:', error);
-        });
-
-      const startSpeechRecognition = () => {
-        const SpeechRecognition =
-          window.SpeechRecognition || window.webkitSpeechRecognition;
-
-        if (!SpeechRecognition) {
-          console.error('SpeechRecognition API not supported in this browser.');
-          return;
-        }
-
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.continuous = true;
-        recognition.interimResults = true;
-
-        recognition.onstart = () => console.log('Speech recognition started.');
-        recognition.onresult = (event) => {
-          const transcript = Array.from(event.results)
-            .map((result) => result[0].transcript)
-            .join('');
-          console.log('Transcript:', transcript);
-        };
-        recognition.onerror = (event:any) => {
-          if (event.error === 'network') {
-            console.error('Network error: Check your internet connection or try deploying to a secure domain.');
-            alert('Speech recognition failed due to a network issue. Please check your internet connection.');
-          } else {
-            console.error('Speech recognition error:', event.error);
-            alert(`Speech recognition error: ${event.error}`);
-          }
-          setIsListening(false);
-        };
-        
-
-        recognition.start();
-      };
-
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognitionInstance = new SpeechRecognition();
-
-      recognitionInstance.continuous = true;
-      recognitionInstance.interimResults = true;
-      recognitionInstance.lang = 'en-US';
-
-      recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
-        const transcript = Array.from(event.results)
-          .map((result) => result[0])
-          .map((result) => result.transcript)
-          .join('');
-        setInputMessage(transcript);
-      };
-
-      recognitionInstance.onerror = (event:any) => {
-        if (event.error === 'network') {
-          console.error('Network error: Check your internet connection or try deploying to a secure domain.');
-          alert('Speech recognition failed due to a network issue. Please check your internet connection.');
-        } else {
-          console.error('Speech recognition error:', event.error);
-          alert(`Speech recognition error: ${event.error}`);
-        }
-        setIsListening(false);
-      };
-
-      recognitionInstance.onend = () => {
-        setIsListening(false);
-      };
-
-      setRecognition(recognitionInstance);
-    }
-  }, []);
-  
-  const initializeSpeechRecognition = async () => {
-    try {
-      // Create recognition instance
-      const recognition = new window.webkitSpeechRecognition();
-      
-      // Configure for extension environment
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-  
-      // Check if we're in a secure context
-      if (!window.isSecureContext) {
-        throw new Error('Speech Recognition requires a secure context');
-      }
-  
-      // Request permission first
-      const permissionResult = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-      
-      if (permissionResult.state === 'denied') {
-        throw new Error('Microphone permission is required');
-      }
-  
-      // Setup event handlers
-      recognition.onstart = () => {
-        console.log('Recognition started');
-        setIsListening(true);
-      };
-  
-      recognition.onerror = (event: any) => {
-        console.error('Recognition error:', event.error);
-        if (event.error === 'network') {
-          // Check if extension is still active and in a valid state
-          if (chrome.runtime?.id && window.isSecureContext) {
-            console.log('Attempting to restart recognition...');
-            setTimeout(() => {
-              try {
-                recognition.stop();
-                recognition.start();
-              } catch (e) {
-                console.error('Failed to restart recognition:', e);
-              }
-            }, 1000);
-          }
-        } else if (event.error === 'not-allowed') {
-          alert('Please grant microphone permission in Chrome settings');
-        }
-        setIsListening(false);
-      };
-  
-      recognition.onend = () => {
-        console.log('Recognition ended');
-        setIsListening(false);
-      };
-  
-      return recognition;
-    } catch (error:any) {
-      console.error('Failed to initialize speech recognition:', error);
-      alert(`Speech recognition error: ${error?.message}`);
-      return null;
-    }
-  };
-  
-  // Modified toggleListening function
-  const toggleListening = async () => {
-    try {
-      if (isListening) {
-        chrome.runtime.sendMessage({ type: 'STOP_SPEECH' });
-        setIsListening(false);
-      } else {
-        chrome.runtime.sendMessage({ type: 'START_SPEECH' });
-        setIsListening(true);
-      }
-    } catch (error) {
-      console.error('Error toggling speech recognition:', error);
-      setIsListening(false);
-    }
-  };
-
-  useEffect(() => {
-    const messageListener = (message:any) => {
+    const messageListener = (message: any) => {
       if (message.type === 'SPEECH_RESULT') {
         setInputMessage(message.text);
       } else if (message.type === 'SPEECH_ERROR') {
@@ -326,6 +94,22 @@ const GeminiStreamChat: React.FC<Props> = ({ scrapedData, apiKey,micPermissionGr
       chrome.runtime.onMessage.removeListener(messageListener);
     };
   }, []);
+
+  const toggleListening = async () => {
+    try {
+      if (isListening) {
+        chrome.runtime.sendMessage({ type: 'STOP_SPEECH' });
+        setIsListening(false);
+      } else {
+        console.log(isListening,"START_SPEECH")
+        chrome.runtime.sendMessage({ type: 'START_SPEECH' });
+        setIsListening(true);
+      }
+    } catch (error) {
+      console.error('Error toggling speech recognition:', error);
+      setIsListening(false);
+    }
+  };
 
   const generateGeminiResponse = async (userInput: string, allowOutOfContext = false) => {
     if (isLoading) return;

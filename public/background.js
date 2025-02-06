@@ -1,53 +1,105 @@
-let recognition;
-
+// Add listener for extension installation
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('Extension installed.');
+  console.log('Extension installed');
 });
 
-// Start speech recognition
-function startRecognition() {
-  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = 'en-US';
+// Handle any background tasks that don't involve speech recognition
+
+let recognition = null;
+
+// Log when the background script loads
+console.log('Background script loaded');
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Message received:', request);
+  
+  if (request.type === 'START_SPEECH') {
+    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+      startSpeechRecognition();
+    } else {
+      // Try using Chrome's speech recognition API
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            func: initSpeechRecognition,
+          });
+        }
+      });
+    }
+  } else if (request.type === 'STOP_SPEECH') {
+    stopSpeechRecognition();
+  }
+});
+
+function initSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    chrome.runtime.sendMessage({
+      type: 'SPEECH_ERROR',
+      error: 'Speech recognition not supported'
+    });
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
   recognition.continuous = true;
   recognition.interimResults = true;
+  recognition.lang = 'en-US';
 
   recognition.onstart = () => {
-    console.log('Speech recognition started.');
+    chrome.runtime.sendMessage({ type: 'SPEECH_START' });
   };
 
   recognition.onresult = (event) => {
     const transcript = Array.from(event.results)
-      .map((result) => result[0].transcript)
+      .map(result => result[0].transcript)
       .join('');
-    console.log('Transcript:', transcript);
-
-    // Send the transcript to the popup or content script
-    chrome.runtime.sendMessage({ type: 'transcript', data: transcript });
+    
+    chrome.runtime.sendMessage({
+      type: 'SPEECH_RESULT',
+      text: transcript
+    });
   };
 
   recognition.onerror = (event) => {
-    console.error('Speech recognition error:', event.error);
+    chrome.runtime.sendMessage({
+      type: 'SPEECH_ERROR',
+      error: event.error
+    });
   };
 
   recognition.onend = () => {
-    console.log('Speech recognition ended.');
+    chrome.runtime.sendMessage({ type: 'SPEECH_END' });
   };
 
   recognition.start();
+  return recognition;
 }
 
-// Stop speech recognition
-function stopRecognition() {
+function startSpeechRecognition() {
+  try {
+    if (!recognition) {
+      recognition = initSpeechRecognition();
+    } else {
+      recognition.start();
+    }
+  } catch (error) {
+    console.error('Error starting recognition:', error);
+    chrome.runtime.sendMessage({
+      type: 'SPEECH_ERROR',
+      error: error.message
+    });
+  }
+}
+
+function stopSpeechRecognition() {
   if (recognition) {
-    recognition.stop();
+    try {
+      recognition.stop();
+      recognition = null;
+    } catch (error) {
+      console.error('Error stopping recognition:', error);
+    }
   }
-}
-
-// Listen for messages from the popup or content script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'start') {
-    startRecognition();
-  } else if (request.type === 'stop') {
-    stopRecognition();
-  }
-});
+} 
