@@ -7,15 +7,12 @@
     "activeTab",
     "scripting",
     "tabs",
-    "audioCapture",
-    "microphone",
-    "tts",
-    "storage",
-    "http://localhost/*",
-    "https://localhost/*",
-    "http://localhost/*",
-    "https://*/*"
+    "audioCapture"
   ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "action": {
     "default_popup": "index.html"
   },
@@ -24,14 +21,9 @@
     "matches": ["<all_urls>"]
   }],
   "host_permissions": [
-    "http://localhost:*",
-    "https://localhost:*",
-    "http://localhost:*/*",
-    "*://*/*",
-    "https://*/*",
-    "http://*/*"
+    "https://*/*"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; media-src 'self' blob:"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; media-src *"
   }
 }

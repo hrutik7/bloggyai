@@ -8,15 +8,17 @@
     "48": "icons/logo48.png",
     "128": "icons/logo128.png"
   },
+  "background": {
+    "service_worker": "background.js"
+  },
   "permissions": ["activeTab", "scripting", "tabs", "storage", "microphone"],
   "action": {
     "default_popup": "index.html",
     "default_icon": {
+
       "48": "icons/logo48.png"
+   
     }
-  },
-  "background": {
-    "service_worker": "background.js"
   },
   "web_accessible_resources": [
     {

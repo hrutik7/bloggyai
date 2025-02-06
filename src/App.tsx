@@ -26,7 +26,7 @@ function App() {
   const [scrapedData, setScrapedData] = useState<ScrapedData[]>([]);
   const [error, setError] = useState<string>('');
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [micPermissionGranted, setMicPermissionGranted] = useState(false);
+  const [micPermissionGranted, setMicPermissionGranted] = useState<any>(false);
 
   useEffect(() => {
     // Check for existing user data in storage
@@ -140,6 +140,7 @@ function App() {
             <GeminiStreamChat 
               scrapedData={scrapedData} 
               apiKey={userData.apiKey}
+              //@ts-ignore
               micPermissionGranted={micPermissionGranted}
             />
           ) : (
